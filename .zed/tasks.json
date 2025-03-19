@@ -1,0 +1,18 @@
+[
+  {
+    "label": "Build rion",
+    "command": "source build.sh"
+  },
+  {
+    "label": "Run rion",
+    "command": "./build/rionc"
+  },
+  {
+    "label": "Build and run rion",
+    "command": "source build.sh && ./build/rionc"
+  },
+  {
+    "label": "Clean build",
+    "command": "rm -rf build"
+  }
+]
