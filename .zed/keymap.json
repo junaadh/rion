@@ -1,4 +1,6 @@
 {
   "context": "Workspace",
-  "bindings": {}
+  "bindings": {
+    "shift shift": "file_finder::Toggle"
+  }
 }

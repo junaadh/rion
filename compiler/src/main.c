@@ -129,6 +129,7 @@ void str_intern_test(void) {
 }
 
 typedef enum TokenKind {
+    TOKEN_EOF = 0,
     TOKEN_INT = 128,
     TOKEN_IDENT,
     // ...
@@ -137,7 +138,7 @@ typedef enum TokenKind {
 size_t copy_token_kind_name(char *dest, size_t dest_size, TokenKind kind) {
     size_t n = 0;
     switch (kind) {
-    case 0:
+    case TOKEN_EOF:
         n = snprintf(dest, dest_size, "end of file");
         break;
     case TOKEN_INT:
@@ -394,27 +395,40 @@ int test_parse_expr(const char *str) {
     return parse_expr();
 }
 
+#define assert_expr(x) assert(test_parse_expr(#x) == (x))
 void parse_test(void) {
-#define TEST_EXPR(x) assert(test_parse_expr(#x) == (x));
     // clang-format off
-    TEST_EXPR(1);
-    TEST_EXPR(-1);
-    TEST_EXPR(1-2-3);
-    TEST_EXPR(2*3+4*5);
-    TEST_EXPR(2+-3);
-    TEST_EXPR(1+2-6/3+6*(3+2));
+    assert_expr(1);
+    assert_expr(-1);
+    assert_expr(1-2-3);
+    assert_expr(2*3+4*5);
+    assert_expr(2+-3);
+    assert_expr(1+2-6/3+6*(3+2));
     // clang-format on
-#undef TEST_EXPR
 }
+
+#define assert_token(x) assert(match_token(x))
+#define assert_token_name(x) assert(token.name == str_intern(x) && match_token(TOKEN_IDENT))
+#define assert_token_int(x) assert(token.i32 == (x) && match_token(TOKEN_INT))
+#define assert_token_eof() assert(is_token(0))
 
 void lex_test(void) {
     char *src = "XY+(XY)1234-_jehllo!huhu_ui,994aa12";
-    stream = src;
-    next_token();
-    while (token.kind) {
-        print_token(token);
-        next_token();
-    }
+    init_stream(src);
+    assert_token_name("XY");
+    assert_token('+');
+    assert_token('(');
+    assert_token_name("XY");
+    assert_token(')');
+    assert_token_int(1234);
+    assert_token('-');
+    assert_token_name("_jehllo");
+    assert_token('!');
+    assert_token_name("huhu_ui");
+    assert_token(',');
+    assert_token_int(994);
+    assert_token_name("aa12");
+    assert_token_eof();
 }
 
 int main(void) {
