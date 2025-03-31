@@ -37,6 +37,16 @@ void syntax_error(const char *fmt, ...) {
     va_end(args);
 }
 
+void fatal_syntax_error(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    printf("Syntax Error: ");
+    vprintf(fmt, args);
+    printf("\n");
+    va_end(args);
+    exit(1);
+}
+
 void *buf__grow(const void *buf, size_t new_len, size_t elem_size) {
     size_t new_cap = MAX(1 + GROWTH_FACTOR * buf_cap(buf), new_len);
     assert(new_len <= new_cap);
@@ -68,6 +78,31 @@ void buf_test(void) {
     assert(buf_len(vec) == 0);
 }
 
+void arena_grow(Arena *arena, size_t min_size) {
+    size_t size = ALIGN_UP(MAX(ARENA_BLOCK_SIZE, min_size), ARENA_ALIGNMENT);
+    arena->ptr = xmalloc(size);
+    arena->end = arena->ptr + size;
+    buf_push(arena->blocks, arena->ptr);
+}
+
+void *arena_alloc(Arena *arena, size_t size) {
+    if (size > (size_t)(arena->end - arena->ptr)) {
+        arena_grow(arena, size);
+        assert(size <= (size_t)(arena->end - arena->ptr));
+    }
+
+    void *ptr = arena->ptr;
+    arena->ptr = ALIGN_UP_PTR(arena->ptr + size, ARENA_ALIGNMENT);
+    assert(arena->ptr <= arena->end);
+    assert(ptr == ALIGN_DOWN_PTR(ptr, ARENA_ALIGNMENT));
+    return ptr;
+}
+
+void arena_free(Arena *arena) {
+    for (char **it = arena->blocks; it != buf_end(arena->blocks); it++)
+        free(*it);
+}
+
 const char *str_intern_range(const char *start, const char *end) {
     size_t len = end - start;
     for (Intern *it = interns; it != buf_end(interns); it++) {
@@ -75,7 +110,7 @@ const char *str_intern_range(const char *start, const char *end) {
             return it->str;
         }
     }
-    char *str = xmalloc(len + 1);
+    char *str = arena_alloc(&str_arena, len + 1);
     memcpy(str, start, len);
     str[len] = 0;
     buf_push(interns, (Intern){len, str});

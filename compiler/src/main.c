@@ -1,9 +1,12 @@
+#include "ast.h"
 #include "common.h"
 #include "lex.h"
 
 void run_tests(void) {
-    lex_test();
     common_test();
+    lex_test();
+    // print_test();
+    parse_test();
 }
 
 int main(void) {

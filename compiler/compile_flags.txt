@@ -1,0 +1,8 @@
+-Isrc
+-g
+-Wall
+-Wextra
+-Werror
+-Wno-missing-braces
+-pedantic
+-std=c11
